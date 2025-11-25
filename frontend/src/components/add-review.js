@@ -1,0 +1,84 @@
+import { useState } from "react";
+import RestaurantDataService from "../services/restaurant.js";
+import { Link, useLocation, useParams } from "react-router-dom";
+
+function AddReview({ user }) {
+  const location = useLocation();
+  const { id } = useParams();
+
+  let initialReviewState = "";
+  let editing = false;
+
+  if (location.state && location.state.currentReview) {
+    editing = true;
+    initialReviewState = location.state.currentReview.text;
+  }
+
+  const [review, setReview] = useState(initialReviewState);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleInputChange = (e) => setReview(e.target.value);
+
+  const saveReview = () => {
+    let data = {
+      text: review,
+      name: user.name,
+      user_id: user.id,
+      restaurant_id: id,
+      ...(editing && { review_id: location.state.currentReview._id }),
+    };
+
+    if (editing) {
+      RestaurantDataService.updateReview(data, (data) => {
+        setSubmitted(true);
+        console.log(data);
+      });
+    } else {
+      RestaurantDataService.createReview(data, (data) => {
+        setSubmitted(true);
+        console.log(data);
+      });
+    }
+  };
+
+  return (
+    <div>
+      {user ? (
+        <div className="submit-form">
+          {submitted ? (
+            <div>
+              <h4>You submitted successfully!</h4>
+              <Link to={"/restaurants/" + id} className="btn btn-success">
+                Back to Restaurant
+              </Link>
+            </div>
+          ) : (
+            <div>
+              <div className="form-group">
+                <label htmlFor="description">
+                  {editing ? "Edit" : "Create"} Review
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="text"
+                  required
+                  value={review}
+                  onChange={handleInputChange}
+                  name="text"
+                />
+              </div>
+              <button onClick={saveReview} className="btn btn-success">
+                Submit
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>Please log in.</div>
+      )}
+    </div>
+  );
+}
+
+export default AddReview;
